@@ -34,7 +34,7 @@ config() {
 run() {
     BUFFER="$(${MEGA_CLI} -AdpAllInfo -a0 -NoLog | egrep -A 8 "^\W*Device Present\W*$" | tail -n 7)"
     VDRIVES=$(echo -e "$BUFFER" | \
-        egrep '^\W+Virtual Drives' | \
+        egrep '^Virtual Drives' | \
         sed -e 's/.*: //')
     DEGRADED=$(echo -e "$BUFFER" | \
         egrep '^\W+Degraded' | \
@@ -43,14 +43,14 @@ run() {
         egrep '^\W+Offline' | \
         sed -e 's/.*: //')
     PDEVS=$(echo -e "$BUFFER" | \
-        egrep '^\W+Physical Devices' | \
+        egrep '^Physical Devices' | \
         sed -e 's/.*: //')
     DISKS=$(echo -e "$BUFFER" | \
         egrep '^\W+Disks' | \
         sed -e 's/.*: //')
     CRITICAL=$(echo -e "$BUFFER" | \
         egrep '^\W+Critical Disks' | \
-        sed -e 's/.+: //')
+        sed -e 's/.*: //')
     FAILED=$(echo -e "$BUFFER" | \
         egrep '^\W+Failed Disks' | \
         sed -e 's/.*: //')
