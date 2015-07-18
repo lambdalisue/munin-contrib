@@ -1,0 +1,74 @@
+#!/bin/bash
+#==============================================================================
+#
+# Munin plugin to monitor MegaRAID via MegaCli
+# via nvidia-smi (340.29)
+#
+#==============================================================================
+MEGA_CLI="/opt/MegaRAID/MegaCli/MegaCli64"
+if [[ ! -x "$MEGA_CLI" ]]; then
+    echo "${MEGA_CLI} is not found or not executable. Exit"
+    exit 1
+fi
+
+config() {
+    echo "graph_title LSI MegaRAID disk"
+    echo "graph_vlabel Disks"
+    echo "graph_category system"
+
+    echo "vdrives.label Virtual disks"
+    echo "degraded.label Degraded virtual disks"
+    echo "degraded.critical 0:0"
+    echo "offline.label Offline virtual disks"
+    echo "offline.critical 0:0"
+
+    echo "pdevs.label Total phisical devices"
+    echo "disks.label Total disks"
+    echo "critical.label Critical disks"
+    echo "critical.critical 0:0"
+    echo "failed.label Failed disks"
+    echo "failed.critical 0:0"
+    exit 0
+}
+
+run() {
+    BUFFER="$(${MEGA_CLI} -AdpAllInfo -a0 -NoLog | egrep -A 8 "^\W*Device Present\W*$" | tail -n 7)"
+    VDRIVES=$(echo -e "$BUFFER" | \
+        egrep '^\W+Virtual Drives' | \
+        sed 's/.+: //')
+    DEGRADED=$(echo -e "$BUFFER" | \
+        egrep '^\W+Degraded' | \
+        sed 's/.+: //')
+    OFFLINE=$(echo -e "$BUFFER" | \
+        egrep '^\W+Offline' | \
+        sed 's/.+: //')
+    PDEVS=$(echo -e "$BUFFER" | \
+        egrep '^\W+Physical Devices' | \
+        sed 's/.+: //')
+    DISKS=$(echo -e "$BUFFER" | \
+        egrep '^\W+Disks' | \
+        sed 's/.+: //')
+    CRITICAL=$(echo -e "$BUFFER" | \
+        egrep '^\W+Critical Disks' | \
+        sed 's/.+: //')
+    FAILED=$(echo -e "$BUFFER" | \
+        egrep '^\W+Failed Disks' | \
+        sed 's/.+: //')
+
+    echo "vdrives.value $VDRIVES"
+    echo "degraded.value $DEGRADED"
+    echo "offline.value $OFFLINE"
+    echo "pdevs.value $PDEVS"
+    echo "disks.value $DISKS"
+    echo "critical.value $CRITICAL"
+    echo "failed.value $FAILED"
+    exit 0
+}
+
+
+case $1 in
+    config)
+        config;;
+    *)
+        run;;
+esac

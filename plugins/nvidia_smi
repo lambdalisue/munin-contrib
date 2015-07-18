@@ -1,0 +1,70 @@
+#!/bin/bash
+#==============================================================================
+#
+# Munin plugin to monitor NVIDIA Tesla M2090 GPU statistics
+# via nvidia-smi (340.29)
+#
+#==============================================================================
+NVIDIA_SMI="/usr/bin/nvidia-smi"
+if [[ ! -x "$NVIDIA_SMI" ]]; then
+    echo "${NVIDIA_SMI} is not found or not executable. Exit"
+    exit 1
+fi
+
+config() {
+    NGPU=$(${NVIDIA_SMI} -L | wc -l)
+    echo "multigraph nvidia_smi"
+    echo "graph_title NVIDIA GPU statistics"
+    echo "graph_vlabel GPUs"
+    echo "graph_category system"
+    echo "gpu_count.label GPU count"
+    for GPU in $(seq 0 $(expr $NGPU - 1)); do
+        echo "multigraph nvidia_smi.gpu${GPU}"
+        echo "graph_title GPU${GPU}"
+        echo "graph_vlabel Percent or Degrees C"
+        echo "graph_category system"
+        echo "temperature.label GPU temperature (C)"
+        echo "temperature.warning 80"
+        echo "temperature.critical 100"
+        echo "utilization_gpu.label GPU utilization (%)"
+        echo "utilization_memory.label Memory utilization (%)"
+    done
+    exit 0
+}
+
+run() {
+    BUFFER="$(${NVIDIA_SMI} -q)"
+    NGPU=$(echo -e "$BUFFER" | \
+        egrep '^Attached GPUs' | \
+        sed 's/.+: //' )
+    TEMP=($(echo -e "$BUFFER" | \
+        egrep -A 1 '^\W+Temperature$' | \
+        egrep '[[:digit:]]+ C' | \
+        sed -e 's/.+: //' -e 's/C$//'))
+    UGPU=($(echo -e "$BUFFER" | \
+        egrep -A 2 '^\W+Utilization$' | \
+        egrep 'Gpu\W*: [[:digit:]]+ %' | \
+        sed -e 's/.+: //' -e 's/%$//'))
+    UMEM=($(echo -e "$BUFFER" | \
+        egrep -A 2 '^\s+Utilization$' | \
+        egrep 'Memory\W*: [[:digit:]]+ %' | \
+        sed -e 's/.+: //' -e 's/%$//'))
+
+    echo "multigraph nvidia_smi"
+    echo "gpu_count.value ${NGPU}"
+    for GPU in $(seq 0 $(expr $NGPU - 1)); do
+        echo "multigraph nvidia_smi.gpu${GPU}"
+        echo "temperature.value ${TEMP[${GPU}]}"
+        echo "utilization_gpu.value ${UGPU[${GPU}]}"
+        echo "utilization_memory.value ${UMEM[${GPU}]}"
+    done
+    exit 0
+}
+
+
+case $1 in
+    config)
+        config;;
+    *)
+        run;;
+esac
