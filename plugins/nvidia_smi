@@ -57,7 +57,7 @@ run() {
         egrep 'Gpu\W*: [[:digit:]]+ %' | \
         sed -e 's/.*: //' -e 's/%$//'))
     UMEM=($(echo -e "$BUFFER" | \
-        egrep -A 2 '^\s+Utilization$' | \
+        egrep -A 2 '^\W+Utilization$' | \
         egrep 'Memory\W*: [[:digit:]]+ %' | \
         sed -e 's/.*: //' -e 's/%$//'))
 
