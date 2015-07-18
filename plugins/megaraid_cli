@@ -13,7 +13,7 @@ fi
 
 config() {
     echo "graph_title LSI MegaRAID disk"
-    echo "graph_vlabel Disks"
+    echo "graph_vlabel number of disks"
     echo "graph_category system"
 
     echo "vdrives.label Virtual disks"

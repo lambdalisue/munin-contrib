@@ -12,22 +12,33 @@ if [[ ! -x "$NVIDIA_SMI" ]]; then
 fi
 
 config() {
-    NGPU=$(${NVIDIA_SMI} -L | wc -l)
-    echo "multigraph nvidia_smi"
-    echo "graph_title NVIDIA GPU statistics"
-    echo "graph_vlabel GPUs"
-    echo "graph_category system"
-    echo "gpu_count.label GPU count"
+    BUFFER=$(${NVIDIA_SMI} -L)
+    GPUS=($BUFFER)
+    NGPU=$(echo -e "$BUFFER" | wc -l)
+    echo "multigraph nvidia_smi_temperature"
+    echo "graph_title NVIDIA GPU Temperature"
+    echo "graph_vlabel temperature (C)"
+    echo "graph_category gpu"
     for GPU in $(seq 0 $(expr $NGPU - 1)); do
-        echo "multigraph nvidia_smi.gpu${GPU}"
-        echo "graph_title GPU${GPU}"
-        echo "graph_vlabel Percent or Degrees C"
-        echo "graph_category system"
-        echo "temperature.label GPU temperature (C)"
-        echo "temperature.warning 80"
-        echo "temperature.critical 100"
-        echo "utilization_gpu.label GPU utilization (%)"
-        echo "utilization_memory.label Memory utilization (%)"
+        echo "GPU${GPU}.label ${GPUS[$GPU]}"
+        echo "GPU${GPU}.warning 80"
+        echo "GPU${GPU}.critical 100"
+    done
+
+    echo "multigraph nvidia_smi_gpu_utilization"
+    echo "graph_title NVIDIA GPU utilization"
+    echo "graph_vlabel utilization (%)"
+    echo "graph_category gpu"
+    for GPU in $(seq 0 $(expr $NGPU - 1)); do
+        echo "GPU${GPU}.label ${GPUS[$GPU]}"
+    done
+
+    echo "multigraph nvidia_smi_memory_utilization"
+    echo "graph_title NVIDIA Memory utilization"
+    echo "graph_vlabel utilization (%)"
+    echo "graph_category gpu"
+    for GPU in $(seq 0 $(expr $NGPU - 1)); do
+        echo "GPU${GPU}.label ${GPUS[$GPU]}"
     done
     exit 0
 }
@@ -50,13 +61,19 @@ run() {
         egrep 'Memory\W*: [[:digit:]]+ %' | \
         sed -e 's/.*: //' -e 's/%$//'))
 
-    echo "multigraph nvidia_smi"
-    echo "gpu_count.value ${NGPU}"
+    echo "multigraph nvidia_smi_temperature"
     for GPU in $(seq 0 $(expr $NGPU - 1)); do
-        echo "multigraph nvidia_smi.gpu${GPU}"
-        echo "temperature.value ${TEMP[${GPU}]}"
-        echo "utilization_gpu.value ${UGPU[${GPU}]}"
-        echo "utilization_memory.value ${UMEM[${GPU}]}"
+        echo "GPU${GPU}.value ${TEMP[${GPU}]}"
+    done
+
+    echo "multigraph nvidia_smi_gpu_utilization"
+    for GPU in $(seq 0 $(expr $NGPU - 1)); do
+        echo "GPU${GPU}.value ${UGPU[${GPU}]}"
+    done
+
+    echo "multigraph nvidia_smi_memory_utilization"
+    for GPU in $(seq 0 $(expr $NGPU - 1)); do
+        echo "GPU${GPU}.value ${UMEM[${GPU}]}"
     done
     exit 0
 }
