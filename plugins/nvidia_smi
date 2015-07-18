@@ -12,8 +12,8 @@ if [[ ! -x "$NVIDIA_SMI" ]]; then
 fi
 
 config() {
-    BUFFER=$(${NVIDIA_SMI} -L)
-    GPUS=($BUFFER)
+    BUFFER="$(${NVIDIA_SMI} -L)"
+    GPUS=($(echo -e "$BUFFER"))
     NGPU=$(echo -e "$BUFFER" | wc -l)
     echo "multigraph nvidia_smi_temperature"
     echo "graph_title NVIDIA GPU Temperature"
