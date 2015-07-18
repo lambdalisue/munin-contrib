@@ -36,19 +36,19 @@ run() {
     BUFFER="$(${NVIDIA_SMI} -q)"
     NGPU=$(echo -e "$BUFFER" | \
         egrep '^Attached GPUs' | \
-        sed 's/.+: //' )
+        sed -e 's/.*: //' )
     TEMP=($(echo -e "$BUFFER" | \
         egrep -A 1 '^\W+Temperature$' | \
         egrep '[[:digit:]]+ C' | \
-        sed -e 's/.+: //' -e 's/C$//'))
+        sed -e 's/.*: //' -e 's/C$//'))
     UGPU=($(echo -e "$BUFFER" | \
         egrep -A 2 '^\W+Utilization$' | \
         egrep 'Gpu\W*: [[:digit:]]+ %' | \
-        sed -e 's/.+: //' -e 's/%$//'))
+        sed -e 's/.*: //' -e 's/%$//'))
     UMEM=($(echo -e "$BUFFER" | \
         egrep -A 2 '^\s+Utilization$' | \
         egrep 'Memory\W*: [[:digit:]]+ %' | \
-        sed -e 's/.+: //' -e 's/%$//'))
+        sed -e 's/.*: //' -e 's/%$//'))
 
     echo "multigraph nvidia_smi"
     echo "gpu_count.value ${NGPU}"

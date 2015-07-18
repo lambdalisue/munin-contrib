@@ -35,25 +35,25 @@ run() {
     BUFFER="$(${MEGA_CLI} -AdpAllInfo -a0 -NoLog | egrep -A 8 "^\W*Device Present\W*$" | tail -n 7)"
     VDRIVES=$(echo -e "$BUFFER" | \
         egrep '^\W+Virtual Drives' | \
-        sed 's/.+: //')
+        sed -e 's/.*: //')
     DEGRADED=$(echo -e "$BUFFER" | \
         egrep '^\W+Degraded' | \
-        sed 's/.+: //')
+        sed -e 's/.*: //')
     OFFLINE=$(echo -e "$BUFFER" | \
         egrep '^\W+Offline' | \
-        sed 's/.+: //')
+        sed -e 's/.*: //')
     PDEVS=$(echo -e "$BUFFER" | \
         egrep '^\W+Physical Devices' | \
-        sed 's/.+: //')
+        sed -e 's/.*: //')
     DISKS=$(echo -e "$BUFFER" | \
         egrep '^\W+Disks' | \
-        sed 's/.+: //')
+        sed -e 's/.*: //')
     CRITICAL=$(echo -e "$BUFFER" | \
         egrep '^\W+Critical Disks' | \
-        sed 's/.+: //')
+        sed -e 's/.+: //')
     FAILED=$(echo -e "$BUFFER" | \
         egrep '^\W+Failed Disks' | \
-        sed 's/.+: //')
+        sed -e 's/.*: //')
 
     echo "vdrives.value $VDRIVES"
     echo "degraded.value $DEGRADED"
