@@ -11,9 +11,20 @@ if [[ ! -x "$NVIDIA_SMI" ]]; then
     exit 1
 fi
 
+split() {
+    local buffer="$1"
+    local ifs_saved=$IFS
+    IFS=$'\n'
+    local array=($buffer)
+    IFS=$ifs_saved
+
+}
 config() {
     BUFFER="$(${NVIDIA_SMI} -L)"
-    GPUS=($(echo -e "$BUFFER"))
+    IFS_SAVED=$IFS
+    IFS=$'\n'
+    GPUS=($BUFFER)
+    IFS=$IFS_SAVED
     NGPU=$(echo -e "$BUFFER" | wc -l)
     echo "multigraph nvidia_smi_temperature"
     echo "graph_title NVIDIA GPU Temperature"
