@@ -20,7 +20,7 @@ split() {
 
 }
 config() {
-    BUFFER="$(${NVIDIA_SMI} -L)"
+    BUFFER="$(${NVIDIA_SMI} -L | sed 's/ (UUID:.*//' )"
     IFS_SAVED=$IFS
     IFS=$'\n'
     GPUS=($BUFFER)
