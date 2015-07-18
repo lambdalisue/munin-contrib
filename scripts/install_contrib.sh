@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-ROOT=$(cd $(dirname $0); pwd)
+ROOT=$(cd $(dirname $(dirname $0)); pwd)
 
 SERVICEDIR=/etc/munin/plugins
 SCONFDIR=/etc/munin/plugin-conf.d
