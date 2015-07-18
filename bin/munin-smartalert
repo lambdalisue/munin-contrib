@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+FROM="munin@$(hostname -f)"
+SENDMAIL="/usr/sbin/sendmail"
+CACHE_DIR="/var/run/munin/smartalert"
+THRESHOLD="24 hours ago"
+
+get_last_nfields() {
+    local filename="${CACHE_DIR}/${1}.last_fields"
+    if [[ -f $filename ]] && ! is_expired $1; then
+        cat $filename
+    fi
+}
+set_last_nfields() {
+    local filename="${CACHE_DIR}/${1}.last_fields"
+    local nfields=$2
+    if [[ ! -d $(dirname $filename) ]]; then
+        mkdir -p $(dirname $filename)
+    fi
+    echo "$nfields" > $filename
+}
+is_expired() {
+    local filename="${CACHE_DIR}/${1}.last_fields"
+    local last_modified=$(date --date \
+        "$(stat $filename | egrep "^Modify:" | sed "s/^Modify: //")" \
+        '+%s' )
+    local threshold_time=$(date --date "$THRESHOLD" '+%s')
+    return $(test $(expr $last_modified - $threshold_time) -le 0)
+}
+
+main() {
+    local id=$1
+    local nfields=$2
+    local subject=$3
+    local recipient=$4
+    local body=$(cat /dev/stdin)
+
+    local last_nfields=$(get_last_nfields $id)
+    if [[ "$nfields" == "$last_nfields" ]]; then
+        # the number of fields of warnings/criticals has not been changed
+        echo "The status has not been changed from last, Skip."
+        exit
+    fi
+    # send mail
+    {
+        echo "From:    $FROM"
+        echo "To:      $recipient"
+        echo "Subject: $subject"
+        echo
+        echo "$body"
+    } | $SENDMAIL -i -f $FROM $recipient
+
+    # record the nfields to LAST_NFIELDS_FILE
+    set_last_nfields $id $nfields
+
+    echo
+    echo "From:    $FROM"
+    echo "To:      $recipient"
+    echo "Subject: $subject"
+    echo
+    echo "$body"
+    echo
+}
+main $@
