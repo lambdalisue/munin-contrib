@@ -1,43 +1,70 @@
-#!/usr/bin/env bash
-FROM="munin@$(hostname -f)"
-SENDMAIL="/usr/sbin/sendmail"
-CACHE_DIR="/var/run/munin/smartalert"
-THRESHOLD="24 hours ago"
+#!/bin/bash
+#==============================================================================
+#
+# munin-smartalert
+#
+# An alert script which check a last status and alert only when the last
+# status has changed (or 24 hours has passed from the last notification)
+#
+# Author:     Alisue
+# License:    MIT license
+#
+# Usage:
+#   munin-smartalert {slug} {status} {subject} {recipient}
+#
+# Example:
+#   contact.{name}.command munin-smartalert \
+#       ${var:group}.${var:host}.${var:graph_category}.${var:graph_title} \
+#       ${var:wfields}:${var:cfields}:${var:ufields} \
+#       Munin::${var:group}::${var:host}::${var:graph_title} \
+#       sample@example.com
+#
+#==============================================================================
+# CONFIGURE -------------------------------------------------------------------
+SENDMAIL="/usr/sbin/sendmail"           # sendmail program
+STATUSDIR="/var/run/munin/smartalert"   # status directory
+THRESHOLD="24 hours ago"                # threshold
+FROM="munin@$(hostname -f)"             # email address for 'from'
 
-get_last_nfields() {
-    local filename="${CACHE_DIR}/${1}.last_fields"
-    if [[ -f $filename ]] && ! is_expired $1; then
-        cat $filename
-    fi
+get_unix_time() {
+    echo $(date --date "$1" '+%s')
 }
-set_last_nfields() {
-    local filename="${CACHE_DIR}/${1}.last_fields"
-    local nfields=$2
-    if [[ ! -d $(dirname $filename) ]]; then
-        mkdir -p $(dirname $filename)
-    fi
-    echo "$nfields" > $filename
+get_filename() {
+    echo "${STATUSDIR}/${1}.laststat"
 }
 is_expired() {
-    local filename="${CACHE_DIR}/${1}.last_fields"
-    local last_modified=$(date --date \
-        "$(stat $filename | egrep "^Modify:" | sed "s/^Modify: //")" \
-        '+%s' )
-    local threshold_time=$(date --date "$THRESHOLD" '+%s')
-    return $(test $(expr $last_modified - $threshold_time) -le 0)
+    local filename="$(get_filename $1)"
+    local modified="$(stat $filename | egrep '^Modify:' | sed 's/^Modify: //')"
+    local lhs=$(get_unix_time "$modified")
+    local rhs=$(get_unix_time "$THRESHOLD")
+    return $(test $(expr $lhs - $rhs) -le 0)
+}
+get_last_status() {
+    local filename="$(get_filename $1)"
+    if [[ -f "$filename" ]] && ! is_expired $1; then
+        cat "$filename"
+    else
+        echo ""
+    fi
+}
+set_last_status() {
+    local filename="$(get_filename $1)"
+    if [[ ! -d "$(dirname $filename)" ]]; then
+        mkdir -p "$(dirname $filename)"
+    fi
+    echo "$2" > "$filename"
 }
 
 main() {
-    local id=$1
-    local nfields=$2
-    local subject=$3
-    local recipient=$4
-    local body=$(cat /dev/stdin)
+    local slug="$1"
+    local status="$2"
+    local subject="$3"
+    local recipient="$4"
+    local body="$(cat /dev/stdin)"
 
-    local last_nfields=$(get_last_nfields $id)
-    if [[ "$nfields" == "$last_nfields" ]]; then
-        # the number of fields of warnings/criticals has not been changed
-        echo "The status has not been changed from last, Skip."
+    local last_status="$(get_last_status $slug)"
+    if [[ "$status" == "$last_status" ]]; then
+        echo "The status ($status) has not been changed. Skip."
         exit
     fi
     # send mail
@@ -47,11 +74,9 @@ main() {
         echo "Subject: $subject"
         echo
         echo "$body"
-    } | $SENDMAIL -i -f $FROM $recipient
+    } | $SENDMAIL -i -f "$FROM" "$recipient"
 
-    # record the nfields to LAST_NFIELDS_FILE
-    set_last_nfields $id $nfields
-
+    set_last_status "$slug" "$status"
     echo
     echo "From:    $FROM"
     echo "To:      $recipient"
@@ -60,4 +85,4 @@ main() {
     echo "$body"
     echo
 }
-main $@
+main "$@"
