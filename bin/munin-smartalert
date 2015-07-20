@@ -64,7 +64,7 @@ main() {
 
     local last_status="$(get_last_status $slug)"
     if [[ "$status" == "$last_status" ]]; then
-        echo "The status ($status) has not been changed. Skip."
+        echo "The status ($status) of slug ($slug) has not been changed. Skip."
         exit
     fi
     # send mail
