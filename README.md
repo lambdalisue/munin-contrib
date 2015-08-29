@@ -33,10 +33,10 @@ And the example of the usage in `/etc/munin/munin.conf` is
 
 ```
 contact.{name}.command /opt/munin-contrib/bin/munin-smartalert \
-    ${var:group}.${var:host}.${var:graph_category}.${var:graph_title} \
-    ${var:wfields}:${var:cfields}:${var:ufields} \
-    Munin::${var:group}::${var:host}::${var:graph_title} \
-    sample@example.com
+    "${var:group}.${var:host}.${var:graph_category}.${var:graph_title}" \
+    "${var:wfields}:${var:cfields}:${var:ufields}" \
+    "Munin::${var:group}::${var:host}::${var:graph_title}" \
+    "sample@example.com"
 ```
 
 ### megaraid_cli
