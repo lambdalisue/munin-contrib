@@ -39,6 +39,8 @@ contact.{name}.command /opt/munin-contrib/bin/munin-smartalert \
     "sample@example.com"
 ```
 
+To clear cache, remove `/var/run/munin/smartalert` directory.
+
 ### megaraid_cli
 
 TODO
